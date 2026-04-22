@@ -1,26 +1,19 @@
 // api/generate.js
-// Proxy seguro para Claude API — nunca expone la API key al frontend
+// Proxy seguro para Claude API — Node.js runtime
 
-export const config = { runtime: 'edge' };
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-export default async function handler(req) {
-  // Solo POST
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
-  }
-
-  // CORS
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const body = await req.json();
+    const { messages } = req.body;
 
-    // Validación básica: que venga un prompt
-    if (!body.messages || !Array.isArray(body.messages)) {
-      return new Response(JSON.stringify({ error: 'Invalid request' }), { status: 400, headers });
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'Invalid request' });
     }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -33,21 +26,21 @@ export default async function handler(req) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        messages: body.messages,
+        messages,
       }),
     });
 
     if (!response.ok) {
       const err = await response.text();
       console.error('Anthropic error:', err);
-      return new Response(JSON.stringify({ error: 'AI service error' }), { status: 502, headers });
+      return res.status(502).json({ error: 'AI service error' });
     }
 
     const data = await response.json();
-    return new Response(JSON.stringify(data), { status: 200, headers });
+    return res.status(200).json(data);
 
   } catch (err) {
     console.error('generate error:', err);
-    return new Response(JSON.stringify({ error: 'Internal error' }), { status: 500, headers });
+    return res.status(500).json({ error: 'Internal error' });
   }
 }
