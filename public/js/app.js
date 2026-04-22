@@ -4,8 +4,8 @@
 
 // ── CONFIG ──────────────────────────────────────────────────
 // Estas variables se reemplazan con las tuyas reales
-const SUPABASE_URL  = window.ENV_SUPABASE_URL  || 'https://YOUR_PROJECT.supabase.co';
-const SUPABASE_KEY  = window.ENV_SUPABASE_KEY  || 'YOUR_ANON_KEY';
+const SUPABASE_URL = 'https://axoerklvywudlnzlptfe.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_aDDSw3waheb_NpmUp4Ts0g_YM-kkGn1';
 
 // Apunta al proxy seguro en Vercel (nunca directamente a Anthropic desde el browser)
 const AI_API_URL    = '/api/generate';
