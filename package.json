@@ -1,0 +1,15 @@
+{
+  "name": "presupuestoia",
+  "version": "1.0.0",
+  "description": "Generador de presupuestos con IA para autónomos y oficios",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "stripe": "^14.21.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

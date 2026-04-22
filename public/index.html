@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PresupuestoIA — Presupuestos profesionales en 2 minutos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Bricolage+Grotesque:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* ============================================================
+   PRESUPUESTOIA — Design System
+   Aesthetic: Clean industrial · Warm amber accents · Trustworthy
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #f7f5f0;
+  --surface:   #ffffff;
+  --surface2:  #f0ede6;
+  --border:    #e2ddd6;
+  --border2:   #ccc7be;
+  --accent:    #e8800a;
+  --accent-lt: #fef3e2;
+  --accent-dk: #c46a00;
+  --text:      #1a1714;
+  --text2:     #6b6560;
+  --text3:     #9e9891;
+  --green:     #2d7a4f;
+  --green-lt:  #e8f5ee;
+  --red:       #c0392b;
+  --red-lt:    #fdecea;
+  --radius:    10px;
+  --shadow:    0 2px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 15px;
+}
+
+h1,h2,h3,h4 { font-family: 'Bricolage Grotesque', sans-serif; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── SCREENS ── */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; }
+
+/* ══════════════════════════════════════════
+   LANDING / AUTH SCREEN
+═══════════════════════════════════════════ */
+#screen-landing {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--text);
+  position: relative;
+  overflow: hidden;
+  padding: 40px 20px;
+}
+
+#screen-landing::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 50%, rgba(232,128,10,0.15) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 80% 30%, rgba(232,128,10,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.landing-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+}
+
+.landing-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 80px;
+  align-items: center;
+  max-width: 1000px;
+  width: 100%;
+}
+
+.landing-left { flex: 1; color: white; }
+
+.landing-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 48px;
+}
+
+.logo-icon {
+  width: 40px; height: 40px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+
+.logo-text {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: white;
+}
+.logo-text span { color: var(--accent); }
+
+.landing-headline {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 20px;
+  color: white;
+}
+.landing-headline .hl { color: var(--accent); }
+
+.landing-sub {
+  font-size: 1.05rem;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.7;
+  margin-bottom: 36px;
+  max-width: 420px;
+}
+
+.landing-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 100px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+}
+.pill-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+
+/* Auth box */
+.auth-box {
+  width: 380px;
+  flex-shrink: 0;
+  background: white;
+  border-radius: 16px;
+  padding: 36px;
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-tabs {
+  display: flex;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 28px;
+  gap: 4px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 9px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.auth-tab.active {
+  background: white;
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.auth-form { display: none; flex-direction: column; gap: 14px; }
+.auth-form.active { display: flex; }
+
+.auth-form h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.auth-form p { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; font-weight: 500; color: var(--text2); }
+
+input[type=text], input[type=email], input[type=password], input[type=tel], textarea, select {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+  transition: border-color 0.2s;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); background: white; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent-dk); transform: translateY(-1px); }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1.5px solid var(--border); }
+.btn-secondary:hover { border-color: var(--border2); }
+.btn-ghost { background: none; color: var(--text2); }
+.btn-ghost:hover { background: var(--surface2); }
+.btn-danger { background: var(--red-lt); color: var(--red); border: 1px solid rgba(192,57,43,0.2); }
+.btn-full { width: 100%; }
+.btn-sm { padding: 8px 14px; font-size: 13px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+.auth-demo {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 12px;
+  color: var(--text3);
+}
+.auth-demo a { color: var(--accent); cursor: pointer; text-decoration: underline; }
+
+/* ══════════════════════════════════════════
+   MAIN APP LAYOUT
+═══════════════════════════════════════════ */
+#screen-app {
+  flex-direction: row;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--text);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  z-index: 100;
+}
+
+.sb-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sb-logo-text {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+}
+.sb-logo-text span { color: var(--accent); }
+
+.sb-nav {
+  flex: 1;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+  text-align: left;
+  width: 100%;
+}
+.sb-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+.sb-item.active { background: rgba(232,128,10,0.15); color: var(--accent); }
+.sb-item-icon { font-size: 16px; width: 20px; text-align: center; }
+
+.sb-footer {
+  padding: 16px 12px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.sb-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.sb-avatar {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+.sb-user-info { flex: 1; min-width: 0; }
+.sb-user-name { font-size: 13px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-user-plan { font-size: 11px; color: var(--accent); }
+
+/* Main area */
+.main {
+  margin-left: 240px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.topbar {
+  background: white;
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.topbar-title { font-size: 1.1rem; font-weight: 700; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+.quota-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--accent-lt);
+  border: 1px solid rgba(232,128,10,0.2);
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-dk);
+}
+
+/* Content pages */
+.page { display: none; padding: 32px; flex: 1; }
+.page.active { display: block; }
+
+/* ── PAGE HEADER ── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.page-header h2 { font-size: 1.6rem; font-weight: 800; }
+.page-header p { font-size: 14px; color: var(--text2); margin-top: 4px; }
+
+/* ══════════════════════════════════════════
+   GENERATOR PAGE
+═══════════════════════════════════════════ */
+.generator-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.card-head {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-head h3 { font-size: 1rem; font-weight: 700; }
+.card-head p { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.card-body { padding: 22px; }
+
+/* Input mode tabs */
+.input-modes {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.mode-btn {
+  flex: 1;
+  padding: 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.mode-btn.active { border-color: var(--accent); background: var(--accent-lt); color: var(--accent-dk); }
+.mode-btn:hover:not(.active) { border-color: var(--border2); }
+
+/* Voice input */
+.voice-area {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0;
+}
+.voice-area.visible { display: flex; }
+
+.mic-btn {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(232,128,10,0.3);
+}
+.mic-btn:hover { transform: scale(1.05); box-shadow: 0 6px 28px rgba(232,128,10,0.4); }
+.mic-btn.recording {
+  background: var(--red);
+  animation: pulse 1s infinite;
+  box-shadow: 0 4px 20px rgba(192,57,43,0.4);
+}
+@keyframes pulse {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.voice-hint { font-size: 13px; color: var(--text2); }
+.voice-transcript {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text);
+  min-height: 60px;
+  font-style: italic;
+  display: none;
+}
+.voice-transcript.visible { display: block; }
+
+/* Text area */
+.text-area { display: none; }
+.text-area.visible { display: block; }
+
+textarea.job-desc {
+  resize: vertical;
+  min-height: 120px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Structured fields */
+.struct-area { display: none; }
+.struct-area.visible { display: block; }
+
+.fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.field-full { grid-column: 1 / -1; }
+
+/* Client info */
+.client-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text3);
+  margin-bottom: 12px;
+}
+
+/* ── PREVIEW SIDE ── */
+.preview-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  text-align: center;
+  gap: 12px;
+  color: var(--text3);
+}
+.preview-placeholder .big-icon { font-size: 48px; opacity: 0.4; }
+.preview-placeholder p { font-size: 14px; }
+
+/* Budget preview */
+.budget-preview { display: none; }
+.budget-preview.visible { display: block; }
+
+.budget-doc {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 28px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--accent);
+}
+
+.doc-company { }
+.doc-company-name {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.doc-company-info { font-size: 11px; color: var(--text2); margin-top: 4px; line-height: 1.8; }
+
+.doc-meta { text-align: right; }
+.doc-num { font-size: 1rem; font-weight: 700; color: var(--accent); }
+.doc-date { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+.doc-client {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+.doc-client-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 6px; }
+.doc-client-name { font-weight: 600; font-size: 14px; }
+.doc-client-info { font-size: 12px; color: var(--text2); }
+
+.doc-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+
+/* Items table */
+.doc-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+.doc-table th {
+  background: var(--text);
+  color: white;
+  padding: 9px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: left;
+}
+.doc-table th:last-child { text-align: right; }
+.doc-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  vertical-align: top;
+}
+.doc-table td:last-child { text-align: right; font-weight: 600; white-space: nowrap; }
+.doc-table tr:last-child td { border-bottom: none; }
+.doc-table tr:nth-child(even) td { background: var(--bg); }
+
+.doc-totals {
+  margin-left: auto;
+  width: 220px;
+  margin-bottom: 24px;
+}
+.doc-total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+.doc-total-row:last-child {
+  border-bottom: none;
+  border-top: 2px solid var(--text);
+  margin-top: 4px;
+  padding-top: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.doc-notes {
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.7;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.doc-validity {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text3);
+  font-style: italic;
+}
+
+/* Action bar */
+.action-bar {
+  display: flex;
+  gap: 10px;
+  padding: 16px 22px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  flex-wrap: wrap;
+}
+
+/* Loading state */
+.generating-state {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 20px;
+  gap: 16px;
+  text-align: center;
+}
+.generating-state.visible { display: flex; }
+
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.generating-state p { font-size: 14px; color: var(--text2); }
+.generating-state .gen-step { font-size: 12px; color: var(--text3); }
+
+/* ══════════════════════════════════════════
+   HISTORIAL PAGE
+═══════════════════════════════════════════ */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.stat-label { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+.stat-val { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--text); }
+.stat-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.filter-bar input { flex: 1; min-width: 200px; max-width: 300px; }
+.filter-bar select { width: 160px; }
+
+.budget-list { display: flex; flex-direction: column; gap: 8px; }
+
+.budget-row {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.budget-row:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(232,128,10,0.08); }
+
+.br-num { font-weight: 700; font-size: 13px; color: var(--accent); width: 80px; flex-shrink: 0; }
+.br-info { flex: 1; min-width: 0; }
+.br-client { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.br-work { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.br-date { font-size: 12px; color: var(--text3); width: 90px; flex-shrink: 0; }
+.br-amount { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--text); width: 100px; text-align: right; flex-shrink: 0; }
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.status-pending  { background: #fff8e6; color: #b07800; }
+.status-sent     { background: var(--accent-lt); color: var(--accent-dk); }
+.status-accepted { background: var(--green-lt); color: var(--green); }
+.status-rejected { background: var(--red-lt); color: var(--red); }
+
+.br-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text2);
+}
+.empty-state .big { font-size: 48px; margin-bottom: 12px; }
+.empty-state h3 { font-size: 1.1rem; margin-bottom: 8px; }
+.empty-state p { font-size: 13px; color: var(--text3); }
+
+/* ══════════════════════════════════════════
+   PERFIL PAGE
+═══════════════════════════════════════════ */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.avatar-big {
+  width: 72px; height: 72px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: white;
+}
+.avatar-upload-info h4 { font-size: 1rem; font-weight: 700; }
+.avatar-upload-info p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+/* ══════════════════════════════════════════
+   PLANES PAGE
+═══════════════════════════════════════════ */
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 860px;
+}
+
+.plan-card {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  position: relative;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.plan-card:hover { transform: translateY(-2px); }
+.plan-card.popular { border-color: var(--accent); }
+
+.plan-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+.plan-name { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+.plan-price {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.plan-price span { font-size: 1rem; font-weight: 400; color: var(--text2); }
+.plan-desc { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+.plan-features { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+.plan-feature { font-size: 13px; display: flex; gap: 8px; align-items: flex-start; }
+.plan-feature .check { color: var(--green); flex-shrink: 0; }
+
+/* ══════════════════════════════════════════
+   EMAIL MODAL
+═══════════════════════════════════════════ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: white;
+  border-radius: 14px;
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--shadow-lg);
+}
+.modal h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 6px; }
+.modal p { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.modal .field { margin-bottom: 14px; }
+
+/* ══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: var(--text);
+  color: white;
+  border-radius: 10px;
+  font-size: 14px;
+  box-shadow: var(--shadow-lg);
+  animation: slideIn 0.3s ease;
+  max-width: 320px;
+}
+.toast-item.success { background: var(--green); }
+.toast-item.error   { background: var(--red); }
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .generator-layout { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .plans-grid { grid-template-columns: 1fr; max-width: 400px; }
+  .profile-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .main { margin-left: 0; }
+  .landing-content { flex-direction: column; gap: 40px; }
+  .auth-box { width: 100%; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .page { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LANDING / AUTH SCREEN
+══════════════════════════════════════════ -->
+<div id="screen-landing" class="screen active">
+  <div class="landing-grid"></div>
+  <div class="landing-content">
+
+    <div class="landing-left">
+      <div class="landing-logo">
+        <div class="logo-icon">📋</div>
+        <div class="logo-text">Presupuesto<span>IA</span></div>
+      </div>
+      <h1 class="landing-headline">
+        Presupuestos<br>profesionales<br>en <span class="hl">2 minutos</span>
+      </h1>
+      <p class="landing-sub">
+        Describe el trabajo con tu voz o por escrito. La IA genera un presupuesto completo y lo envías al cliente al instante.
+      </p>
+      <div class="landing-pills">
+        <span class="pill"><span class="pill-dot"></span>Fontaneros</span>
+        <span class="pill"><span class="pill-dot"></span>Electricistas</span>
+        <span class="pill"><span class="pill-dot"></span>Pintores</span>
+        <span class="pill"><span class="pill-dot"></span>Reformistas</span>
+        <span class="pill"><span class="pill-dot"></span>Carpinteros</span>
+        <span class="pill"><span class="pill-dot"></span>Cualquier oficio</span>
+      </div>
+    </div>
+
+    <div class="auth-box">
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('login')">Entrar</button>
+        <button class="auth-tab" onclick="switchAuthTab('register')">Registrarse</button>
+      </div>
+
+      <!-- Login -->
+      <div id="auth-login" class="auth-form active">
+        <h3>Bienvenido de vuelta</h3>
+        <p>Entra en tu cuenta para continuar</p>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="login-email" placeholder="tu@email.com">
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" id="login-pass" placeholder="••••••••">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="doLogin()">Entrar</button>
+      </div>
+
+      <!-- Register -->
+      <div id="auth-register" class="auth-form">
+        <h3>Crea tu cuenta gratis</h3>
+        <p>3 presupuestos gratis. Sin tarjeta.</p>
+        <div class="field">
+          <label>Nombre y apellidos</label>
+          <input type="text" id="reg-name" placeholder="Juan García López">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="reg-email" placeholder="tu@email.com">
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="field">
+          <label>Tu oficio</label>
+          <select id="reg-trade">
+            <option value="">Selecciona tu oficio</option>
+            <option>Fontanero</option>
+            <option>Electricista</option>
+            <option>Pintor</option>
+            <option>Reformas / Albañilería</option>
+            <option>Carpintero</option>
+            <option>Instalador climatización</option>
+            <option>Cerrajero</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="doRegister()">Crear cuenta gratis</button>
+      </div>
+
+      <div class="auth-demo">
+        ¿Quieres probar sin registrarte? <a onclick="doDemo()">Modo demo →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN APP SCREEN
+══════════════════════════════════════════ -->
+<div id="screen-app" class="screen">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="logo-icon" style="width:32px;height:32px;font-size:16px;">📋</div>
+      <div class="sb-logo-text">Presupuesto<span>IA</span></div>
+    </div>
+    <nav class="sb-nav">
+      <button class="sb-item active" onclick="showPage('generator', this)">
+        <span class="sb-item-icon">✨</span> Nuevo presupuesto
+      </button>
+      <button class="sb-item" onclick="showPage('history', this)">
+        <span class="sb-item-icon">📁</span> Historial
+      </button>
+      <button class="sb-item" onclick="showPage('profile', this)">
+        <span class="sb-item-icon">⚙️</span> Mi perfil
+      </button>
+      <button class="sb-item" onclick="showPage('plans', this)">
+        <span class="sb-item-icon">⚡</span> Planes
+      </button>
+    </nav>
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-avatar">J</div>
+        <div class="sb-user-info">
+          <div class="sb-user-name" id="sb-username">Usuario</div>
+          <div class="sb-user-plan" id="sb-plan">Plan Gratis</div>
+        </div>
+      </div>
+      <button class="sb-item" onclick="doLogout()" style="color:rgba(255,255,255,0.4)">
+        <span class="sb-item-icon">🚪</span> Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-title" id="topbar-title">Nuevo presupuesto</div>
+      <div class="topbar-right">
+        <div class="quota-badge" id="quota-badge">
+          <span>📋</span> <span id="quota-text">3/3 presupuestos gratis</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── GENERATOR PAGE ── -->
+    <div id="page-generator" class="page active">
+      <div class="page-header">
+        <div>
+          <h2>Nuevo presupuesto</h2>
+          <p>Describe el trabajo y la IA lo redacta por ti</p>
+        </div>
+      </div>
+
+      <div class="generator-layout">
+
+        <!-- Input card -->
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h3>Describe el trabajo</h3>
+              <p>Por voz, texto libre o campos detallados</p>
+            </div>
+          </div>
+          <div class="card-body">
+
+            <!-- Mode selector -->
+            <div class="input-modes">
+              <button class="mode-btn active" onclick="setMode('voice', this)">🎤 Voz</button>
+              <button class="mode-btn" onclick="setMode('text', this)">✍️ Texto libre</button>
+              <button class="mode-btn" onclick="setMode('struct', this)">📋 Detallado</button>
+            </div>
+
+            <!-- Voice -->
+            <div class="voice-area visible" id="voice-area">
+              <button class="mic-btn" id="mic-btn" onclick="toggleRecording()">🎤</button>
+              <div class="voice-hint" id="voice-hint">Pulsa para hablar</div>
+              <div class="voice-transcript" id="voice-transcript"></div>
+            </div>
+
+            <!-- Text free -->
+            <div class="text-area" id="text-area">
+              <textarea class="job-desc" id="text-input"
+                placeholder="Ej: Reparación de tubería bajo fregadero en cocina, cambio de grifo monomando, revisión de desagüe. Cliente en piso 3ª, tarda unos 2 horas. Materiales: tubo PVC, grifo nuevo y codos..."></textarea>
+            </div>
+
+            <!-- Structured -->
+            <div class="struct-area" id="struct-area">
+              <div class="fields-grid">
+                <div class="field">
+                  <label>Tipo de trabajo</label>
+                  <select id="s-type">
+                    <option value="">Seleccionar...</option>
+                    <option>Fontanería</option>
+                    <option>Electricidad</option>
+                    <option>Pintura interior</option>
+                    <option>Pintura exterior</option>
+                    <option>Reforma baño</option>
+                    <option>Reforma cocina</option>
+                    <option>Albañilería</option>
+                    <option>Carpintería</option>
+                    <option>Climatización</option>
+                    <option>Cerrajería</option>
+                    <option>Otro</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Horas estimadas</label>
+                  <input type="text" id="s-hours" placeholder="Ej: 4h">
+                </div>
+                <div class="field">
+                  <label>Superficie (m²)</label>
+                  <input type="text" id="s-area" placeholder="Si aplica">
+                </div>
+                <div class="field">
+                  <label>Urgencia</label>
+                  <select id="s-urgency">
+                    <option>Normal</option>
+                    <option>Urgente (+20%)</option>
+                    <option>Programado</option>
+                  </select>
+                </div>
+                <div class="field field-full">
+                  <label>Descripción adicional</label>
+                  <textarea id="s-desc" style="min-height:80px" placeholder="Materiales específicos, dificultades, acceso..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Client section -->
+            <div class="client-section">
+              <div class="section-label">Datos del cliente</div>
+              <div class="fields-grid">
+                <div class="field">
+                  <label>Nombre cliente</label>
+                  <input type="text" id="c-name" placeholder="María García">
+                </div>
+                <div class="field">
+                  <label>Teléfono</label>
+                  <input type="tel" id="c-phone" placeholder="600 000 000">
+                </div>
+                <div class="field field-full">
+                  <label>Email cliente (para envío)</label>
+                  <input type="email" id="c-email" placeholder="cliente@email.com">
+                </div>
+                <div class="field field-full">
+                  <label>Dirección del trabajo</label>
+                  <input type="text" id="c-address" placeholder="Calle Mayor 5, 2ºA, Barcelona">
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+              <button class="btn btn-primary btn-full" onclick="generateBudget()" id="gen-btn" style="padding:14px;">
+                ✨ Generar presupuesto con IA
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview card -->
+        <div class="card" style="position:sticky; top:80px;">
+          <div class="card-head">
+            <div>
+              <h3>Vista previa</h3>
+              <p>Tu presupuesto generado</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="editBudget()" id="edit-btn" style="display:none">✏️ Editar</button>
+          </div>
+
+          <!-- Placeholder -->
+          <div class="preview-placeholder" id="preview-placeholder">
+            <div class="big-icon">📄</div>
+            <p>Aquí aparecerá tu presupuesto<br>listo para enviar</p>
+          </div>
+
+          <!-- Generating -->
+          <div class="generating-state" id="generating-state">
+            <div class="spinner"></div>
+            <p>Generando tu presupuesto...</p>
+            <div class="gen-step" id="gen-step">Analizando el trabajo</div>
+          </div>
+
+          <!-- Budget preview -->
+          <div class="budget-preview" id="budget-preview">
+            <div class="budget-doc" id="budget-doc">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+
+          <div class="action-bar" id="action-bar" style="display:none">
+            <button class="btn btn-primary" onclick="downloadPDF()">⬇️ Descargar PDF</button>
+            <button class="btn btn-secondary" onclick="openEmailModal()">📧 Enviar por email</button>
+            <button class="btn btn-ghost btn-sm" onclick="saveBudget()">💾 Guardar</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── HISTORY PAGE ── -->
+    <div id="page-history" class="page">
+      <div class="page-header">
+        <div>
+          <h2>Historial</h2>
+          <p>Todos tus presupuestos guardados</p>
+        </div>
+        <button class="btn btn-primary" onclick="showPage('generator', document.querySelector('.sb-item'))">+ Nuevo</button>
+      </div>
+
+      <div class="stats-row" id="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Total presupuestos</div>
+          <div class="stat-val" id="stat-total">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Aceptados</div>
+          <div class="stat-val" id="stat-accepted" style="color:var(--green)">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Importe total</div>
+          <div class="stat-val" id="stat-amount">€0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Tasa aceptación</div>
+          <div class="stat-val" id="stat-rate">—</div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <input type="text" placeholder="Buscar por cliente o trabajo..." id="search-input" oninput="filterBudgets()">
+        <select onchange="filterBudgets()" id="status-filter">
+          <option value="">Todos los estados</option>
+          <option value="pending">Pendiente</option>
+          <option value="sent">Enviado</option>
+          <option value="accepted">Aceptado</option>
+          <option value="rejected">Rechazado</option>
+        </select>
+      </div>
+
+      <div class="budget-list" id="budget-list">
+        <div class="empty-state">
+          <div class="big">📂</div>
+          <h3>Sin presupuestos todavía</h3>
+          <p>Genera tu primer presupuesto y aparecerá aquí</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROFILE PAGE ── -->
+    <div id="page-profile" class="page">
+      <div class="page-header">
+        <div>
+          <h2>Mi perfil profesional</h2>
+          <p>Estos datos aparecen en todos tus presupuestos</p>
+        </div>
+        <button class="btn btn-primary" onclick="saveProfile()">💾 Guardar cambios</button>
+      </div>
+
+      <div class="profile-grid">
+        <div class="card">
+          <div class="card-head"><div><h3>Datos personales</h3></div></div>
+          <div class="card-body">
+            <div class="avatar-upload">
+              <div class="avatar-big" id="profile-avatar">J</div>
+              <div class="avatar-upload-info">
+                <h4 id="profile-name-display">Tu nombre</h4>
+                <p id="profile-trade-display">Tu oficio</p>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div class="field"><label>Nombre completo / Empresa</label>
+                <input type="text" id="p-name" placeholder="Juan García Fontanería"></div>
+              <div class="field"><label>Oficio / Especialidad</label>
+                <input type="text" id="p-trade" placeholder="Fontanero · Instalaciones sanitarias"></div>
+              <div class="field"><label>NIF / CIF</label>
+                <input type="text" id="p-nif" placeholder="12345678A"></div>
+              <div class="field"><label>Teléfono</label>
+                <input type="tel" id="p-phone" placeholder="600 000 000"></div>
+              <div class="field"><label>Email profesional</label>
+                <input type="email" id="p-email" placeholder="info@miempresa.com"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div><h3>Dirección y notas</h3></div></div>
+          <div class="card-body">
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div class="field"><label>Dirección fiscal</label>
+                <input type="text" id="p-address" placeholder="Calle Ejemplo 1, 08001 Barcelona"></div>
+              <div class="field"><label>Población</label>
+                <input type="text" id="p-city" placeholder="Barcelona, Cataluña"></div>
+              <div class="field"><label>Web (opcional)</label>
+                <input type="text" id="p-web" placeholder="www.muweb.com"></div>
+              <div class="field">
+                <label>Condiciones de pago por defecto</label>
+                <select id="p-payment">
+                  <option>50% al aceptar, 50% al finalizar</option>
+                  <option>Pago al finalizar</option>
+                  <option>Pago a 30 días</option>
+                  <option>Pago al contado</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Nota al pie del presupuesto</label>
+                <textarea id="p-note" style="min-height:90px" placeholder="Ej: Garantía de 1 año en todos los trabajos. No incluye retirada de materiales antiguos salvo indicación."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PLANS PAGE ── -->
+    <div id="page-plans" class="page">
+      <div class="page-header">
+        <div>
+          <h2>Planes</h2>
+          <p>Empieza gratis, escala cuando quieras</p>
+        </div>
+      </div>
+
+      <div class="plans-grid">
+        <div class="plan-card">
+          <div class="plan-name">Gratis</div>
+          <div class="plan-price">€0 <span>/ mes</span></div>
+          <div class="plan-desc">Para probar la plataforma</div>
+          <div class="plan-features">
+            <div class="plan-feature"><span class="check">✓</span> 3 presupuestos/mes</div>
+            <div class="plan-feature"><span class="check">✓</span> Descarga en PDF</div>
+            <div class="plan-feature"><span class="check">✓</span> Historial básico</div>
+          </div>
+          <button class="btn btn-secondary btn-full" id="plan-free-btn" disabled>Plan actual</button>
+        </div>
+
+        <div class="plan-card popular">
+          <div class="plan-badge">⚡ Más popular</div>
+          <div class="plan-name">Pro</div>
+          <div class="plan-price">€29 <span>/ mes</span></div>
+          <div class="plan-desc">Para autónomos activos</div>
+          <div class="plan-features">
+            <div class="plan-feature"><span class="check">✓</span> Presupuestos ilimitados</div>
+            <div class="plan-feature"><span class="check">✓</span> Envío por email incluido</div>
+            <div class="plan-feature"><span class="check">✓</span> Logo propio en documentos</div>
+            <div class="plan-feature"><span class="check">✓</span> Historial completo</div>
+            <div class="plan-feature"><span class="check">✓</span> Estadísticas avanzadas</div>
+          </div>
+          <button class="btn btn-primary btn-full" id="plan-pro-btn" onclick="startCheckout('pro')">
+            Activar Pro →
+          </button>
+        </div>
+
+        <div class="plan-card">
+          <div class="plan-name">Empresa</div>
+          <div class="plan-price">€79 <span>/ mes</span></div>
+          <div class="plan-desc">Para equipos y empresas</div>
+          <div class="plan-features">
+            <div class="plan-feature"><span class="check">✓</span> Todo lo de Pro</div>
+            <div class="plan-feature"><span class="check">✓</span> Hasta 5 usuarios</div>
+            <div class="plan-feature"><span class="check">✓</span> Aprobaciones internas</div>
+            <div class="plan-feature"><span class="check">✓</span> Soporte prioritario</div>
+          </div>
+          <button class="btn btn-secondary btn-full" id="plan-empresa-btn" onclick="startCheckout('empresa')">
+            Activar Empresa →
+          </button>
+        </div>
+      </div>
+
+      <!-- Manage subscription (shown when user has active plan) -->
+      <div id="manage-sub-block" style="display:none; margin-top:28px; padding:20px 24px; background:white; border:1px solid var(--border); border-radius:var(--radius); max-width:860px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+          <div>
+            <div style="font-weight:700; margin-bottom:4px;">Gestionar suscripción</div>
+            <div style="font-size:13px; color:var(--text2);">Cambia tu método de pago, descarga facturas o cancela en cualquier momento.</div>
+          </div>
+          <button class="btn btn-secondary" onclick="openCustomerPortal()">⚙️ Gestionar suscripción</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /screen-app -->
+
+<!-- Checkout success banner -->
+<div id="checkout-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:var(--green); color:white; padding:14px 24px; text-align:center; font-weight:600; font-size:15px;">
+  🎉 ¡Suscripción activada! Ya tienes presupuestos ilimitados.
+  <button onclick="document.getElementById('checkout-banner').style.display='none'" style="margin-left:16px; background:rgba(255,255,255,0.2); border:none; color:white; padding:4px 12px; border-radius:6px; cursor:pointer;">✕</button>
+</div>
+
+<!-- Email Modal -->
+<div class="modal-overlay" id="email-modal">
+  <div class="modal">
+    <h3>📧 Enviar presupuesto por email</h3>
+    <p>El cliente recibirá el presupuesto en PDF adjunto</p>
+    <div class="field">
+      <label>Email del cliente</label>
+      <input type="email" id="modal-email" placeholder="cliente@email.com">
+    </div>
+    <div class="field">
+      <label>Mensaje personalizado (opcional)</label>
+      <textarea id="modal-msg" style="min-height:80px" placeholder="Estimado/a cliente, adjunto le enviamos el presupuesto solicitado..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="sendEmail()">Enviar presupuesto →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast" id="toast-container"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
